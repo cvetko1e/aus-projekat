@@ -1,4 +1,4 @@
-﻿using Common;
+using Common;
 using dCom.Configuration;
 using Modbus.Connection;
 using ProcessingModule;

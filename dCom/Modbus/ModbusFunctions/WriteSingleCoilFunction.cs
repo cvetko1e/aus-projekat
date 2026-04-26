@@ -24,15 +24,48 @@ namespace Modbus.ModbusFunctions
         /// <inheritdoc />
         public override byte[] PackRequest()
         {
-            //TO DO: IMPLEMENT
-            throw new NotImplementedException();
+            ModbusWriteCommandParameters p = (ModbusWriteCommandParameters)CommandParameters;
+            byte[] retVal = new byte[12];
+
+            ushort transactionId = (ushort)IPAddress.HostToNetworkOrder((short)CommandParameters.TransactionId);
+            ushort protocolId = (ushort)IPAddress.HostToNetworkOrder((short)CommandParameters.ProtocolId);
+            ushort length = (ushort)IPAddress.HostToNetworkOrder((short)CommandParameters.Length);
+            ushort outputAddress = (ushort)IPAddress.HostToNetworkOrder((short)p.OutputAddress);
+            ushort coilValue = (ushort)(p.Value == 0 ? 0x0000 : 0xFF00);
+            ushort value = (ushort)IPAddress.HostToNetworkOrder((short)coilValue);
+
+            Buffer.BlockCopy(BitConverter.GetBytes(transactionId), 0, retVal, 0, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(protocolId), 0, retVal, 2, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(length), 0, retVal, 4, 2);
+            retVal[6] = CommandParameters.UnitId;
+            retVal[7] = CommandParameters.FunctionCode;
+            Buffer.BlockCopy(BitConverter.GetBytes(outputAddress), 0, retVal, 8, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, retVal, 10, 2);
+
+            return retVal;
         }
 
         /// <inheritdoc />
         public override Dictionary<Tuple<PointType, ushort>, ushort> ParseResponse(byte[] response)
         {
-            //TO DO: IMPLEMENT
-            throw new NotImplementedException();
+            Dictionary<Tuple<PointType, ushort>, ushort> r = new Dictionary<Tuple<PointType, ushort>, ushort>();
+
+            if (response[7] != CommandParameters.FunctionCode + 0x80)
+            {
+                short address = BitConverter.ToInt16(response, 8);
+                short value = BitConverter.ToInt16(response, 10);
+
+                address = IPAddress.NetworkToHostOrder(address);
+                value = IPAddress.NetworkToHostOrder(value);
+                ushort normalizedValue = (ushort)(value == 0 ? 0 : 1);
+                r.Add(new Tuple<PointType, ushort>(PointType.DIGITAL_OUTPUT, (ushort)address), normalizedValue);
+            }
+            else
+            {
+                HandeException(response[8]);
+            }
+
+            return r;
         }
     }
 }

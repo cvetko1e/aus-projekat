@@ -270,7 +270,6 @@ namespace dCom.Configuration
 		{
 			RegistryType = GetRegistryType(configurationParameters[0]);
 			int temp;
-			double doubleTemp;
 			Int32.TryParse(configurationParameters[1], out temp);
 			NumberOfRegisters = (ushort)temp;
 			Int32.TryParse(configurationParameters[2], out temp);
@@ -294,6 +293,59 @@ namespace dCom.Configuration
                 Int32.TryParse(configurationParameters[9], out temp);
                 AcquisitionInterval = temp;
             }
+
+            if (configurationParameters.Count >= 17)
+            {
+                ScaleFactor = ParseDoubleParameter(configurationParameters[10], 1);
+                Deviation = ParseDoubleParameter(configurationParameters[11], 0);
+                EGU_Min = ParseDoubleParameter(configurationParameters[12], 0);
+                EGU_Max = ParseDoubleParameter(configurationParameters[13], 0);
+                AbnormalValue = ParseUShortParameter(configurationParameters[14], 0);
+                HighLimit = ParseDoubleParameter(configurationParameters[15], 0);
+                LowLimit = ParseDoubleParameter(configurationParameters[16], 0);
+            }
+            else
+            {
+                ScaleFactor = 1;
+                Deviation = 0;
+                EGU_Min = 0;
+                EGU_Max = 0;
+                AbnormalValue = 0;
+                HighLimit = 0;
+                LowLimit = 0;
+            }
+        }
+
+        private double ParseDoubleParameter(string parameter, double defaultValue)
+        {
+            if (parameter == "#")
+            {
+                return defaultValue;
+            }
+
+            double value;
+            if (Double.TryParse(parameter, out value))
+            {
+                return value;
+            }
+
+            return defaultValue;
+        }
+
+        private ushort ParseUShortParameter(string parameter, ushort defaultValue)
+        {
+            if (parameter == "#")
+            {
+                return defaultValue;
+            }
+
+            int value;
+            if (Int32.TryParse(parameter, out value))
+            {
+                return (ushort)value;
+            }
+
+            return defaultValue;
         }
 
 		private PointType GetRegistryType(string registryTypeName)
